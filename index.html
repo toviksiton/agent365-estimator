@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Agent 365 Cost Estimator</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{font-family:-apple-system,'Segoe UI','Helvetica Neue',sans-serif;background:linear-gradient(135deg,#ffffff 0%,#f0f8ff 50%,#fff5f0 100%);color:#2c3e50;line-height:1.6;min-height:100vh}
+.container{max-width:1200px;margin:0 auto;padding:32px 20px}
+.header{background:linear-gradient(135deg,#5b7fff 0%,#ff6b9d 50%,#ffa500 100%);color:white;padding:64px 48px;border-radius:20px;margin-bottom:48px;box-shadow:0 8px 32px rgba(91,127,255,0.2);position:relative;overflow:hidden}
+.header::before{content:'';position:absolute;top:-50%;right:-10%;width:400px;height:400px;background:radial-gradient(circle,rgba(255,255,255,0.15),transparent);border-radius:50%}
+.header h1{font-size:3.2em;font-weight:800;margin-bottom:12px;letter-spacing:-0.5px;position:relative;z-index:1}
+.header p{font-size:1.2em;opacity:0.95;font-weight:400;position:relative;z-index:1}
+.tabs{display:flex;gap:12px;margin-bottom:40px;flex-wrap:wrap;padding:16px;background:rgba(255,255,255,0.7);border-radius:16px;backdrop-filter:blur(10px);border:1px solid rgba(91,127,255,0.2)}
+.tab{padding:12px 24px;cursor:pointer;background:transparent;border:none;font-size:0.95em;color:#666;font-weight:600;border-radius:8px;transition:all 0.3s;position:relative}
+.tab:hover{color:#5b7fff;background:rgba(91,127,255,0.1)}
+.tab.active{color:white;background:linear-gradient(135deg,#5b7fff 0%,#ff6b9d 100%);box-shadow:0 4px 12px rgba(91,127,255,0.3)}
+.tab-content{display:none;animation:fadeIn 0.4s}
+.tab-content.active{display:block}
+@keyframes fadeIn{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+.card{background:white;border-radius:16px;padding:40px;margin-bottom:28px;box-shadow:0 4px 16px rgba(0,0,0,0.08);border:1px solid rgba(91,127,255,0.15);transition:all 0.3s}
+.card:hover{box-shadow:0 8px 32px rgba(91,127,255,0.15);transform:translateY(-2px)}
+.input-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:24px;margin-bottom:32px}
+.input-group{display:flex;flex-direction:column}
+.input-group label{font-size:0.9em;font-weight:700;margin-bottom:10px;color:#5b7fff;text-transform:uppercase;letter-spacing:0.5px}
+.input-group input{padding:12px 14px;border:2px solid #e0e8ff;border-radius:8px;font-size:0.95em;transition:all 0.3s;background:#f9faff}
+.input-group input:focus{outline:none;border-color:#5b7fff;background:white;box-shadow:0 0 0 4px rgba(91,127,255,0.15)}
+.input-group small{font-size:0.8em;color:#999;margin-top:6px}
+.cost-summary{background:linear-gradient(135deg,#f5f8ff 0%,#fff5f0 100%);border-radius:12px;padding:32px;border-left:4px solid #5b7fff;border:1px solid rgba(91,127,255,0.2)}
+.cost-row{display:flex;justify-content:space-between;align-items:center;padding:16px 0;border-bottom:1px solid rgba(91,127,255,0.1);transition:all 0.2s}
+.cost-row:hover{background:rgba(91,127,255,0.05);padding:16px 12px;border-radius:6px}
+.cost-row:last-child{border-bottom:none}
+.cost-row strong{font-size:1em;color:#2c3e50;font-weight:600}
+.cost-row .val{font-size:1.15em;font-weight:700;color:#10b981}
+.cost-row.total{background:linear-gradient(135deg,#e8f5f0 0%,#f0f8ff 100%);border-radius:10px;padding:20px;margin-top:16px;font-size:1.05em;box-shadow:0 2px 8px rgba(16,185,129,0.1);border:1px solid rgba(16,185,129,0.2)}
+.cost-row.total strong{color:#5b7fff;font-weight:700}
+.cost-row.total .val{color:#10b981;font-size:1.3em}
+.btn-group{display:flex;gap:16px;flex-wrap:wrap;margin-top:32px}
+.btn{padding:12px 28px;border:none;border-radius:8px;font-size:0.95em;font-weight:700;cursor:pointer;transition:all 0.3s;border:2px solid transparent}
+.btn-primary{background:linear-gradient(135deg,#5b7fff 0%,#ff6b9d 100%);color:white;box-shadow:0 4px 12px rgba(91,127,255,0.2)}
+.btn-primary:hover{transform:translateY(-2px);box-shadow:0 6px 20px rgba(91,127,255,0.3)}
+.btn-secondary{background:white;color:#5b7fff;border:2px solid #5b7fff}
+.btn-secondary:hover{background:rgba(91,127,255,0.05)}
+.pricing-table{width:100%;border-collapse:collapse;margin:24px 0}
+.pricing-table th{background:linear-gradient(135deg,#5b7fff 0%,#ff6b9d 100%);color:white;padding:16px;text-align:left;font-weight:700;font-size:0.9em;text-transform:uppercase;letter-spacing:0.5px;border-radius:8px 8px 0 0}
+.pricing-table td{padding:14px;border-bottom:1px solid #e0e8ff;font-size:0.95em;color:#2c3e50}
+.pricing-table tr:hover{background:#f9faff}
+.scenario{background:linear-gradient(135deg,#e8f5f0 0%,#f5f8ff 100%);padding:24px;border-radius:12px;border-left:4px solid #10b981;margin-bottom:20px;border:1px solid rgba(16,185,129,0.2);transition:all 0.3s}
+.scenario:hover{background:linear-gradient(135deg,#d4f0e8 0%,#f0f5ff 100%);transform:translateX(4px)}
+.scenario h4{color:#10b981;margin-bottom:8px;font-weight:700;font-size:1.05em}
+.scenario p{font-size:0.9em;color:#666;margin-bottom:12px}
+.scenario-cost{font-size:1.3em;font-weight:800;color:#10b981}
+.faq-item{margin-bottom:24px;padding-bottom:24px;border-bottom:1px solid #e0e8ff}
+.faq-item:last-child{border-bottom:none}
+.faq-item h3{color:#5b7fff;margin-bottom:10px;font-weight:700;font-size:1em;text-transform:uppercase;letter-spacing:0.5px}
+.faq-item p{font-size:0.9em;color:#666;line-height:1.8}
+.badge{display:inline-block;background:linear-gradient(135deg,rgba(16,185,129,0.2) 0%,rgba(91,127,255,0.2) 100%);color:#10b981;padding:6px 12px;border-radius:6px;font-size:0.75em;font-weight:700;margin-left:8px;text-transform:uppercase;letter-spacing:0.4px;border:1px solid rgba(16,185,129,0.3)}
+.highlight{background:linear-gradient(135deg,rgba(255,200,0,0.15) 0%,rgba(255,150,0,0.1) 100%);border-left:4px solid #ffa500;padding:20px;border-radius:10px;margin:24px 0;border:1px solid rgba(255,165,0,0.3)}
+.highlight strong{color:#ff8c00}
+h2{color:#5b7fff;margin:32px 0 20px 0;font-size:1.4em;font-weight:800;text-transform:uppercase;letter-spacing:0.5px}
+h3{color:#2c3e50;font-size:1.05em;font-weight:700}
+.footer{text-align:center;color:#999;margin-top:60px;padding-top:32px;border-top:1px solid #e0e8ff;font-size:0.85em}
+@media(max-width:768px){.header{padding:40px 24px}.header h1{font-size:2.2em}.input-grid{grid-template-columns:1fr}.card{padding:24px}.tabs{flex-direction:column}.tab{width:100%}}
+</style>
+</head>
+<body>
+<div class="container">
+<div class="header">
+<h1>🤖 Agent 365 Cost Estimator</h1>
+<p>Calculate monthly operating costs for your standalone Autopilot</p>
+</div>
+
+<div class="tabs">
+<button class="tab active" onclick="showTab('calc')">💰 Calculator</button>
+<button class="tab" onclick="showTab('learn')">📖 How It Works</button>
+<button class="tab" onclick="showTab('pricing')">📊 Pricing</button>
+<button class="tab" onclick="showTab('faq')">❓ FAQ</button>
+</div>
+
+<!-- CALCULATOR -->
+<div id="calc" class="tab-content active">
+<div class="card">
+<h2>Monthly Cost Estimate</h2>
+<div class="input-grid">
+<div class="input-group">
+<label>Agent 365 Governance <span class="badge">Required</span></label>
+<input type="number" id="ag365" value="15" min="0" step="0.01" oninput="calc()">
+<small>$15/month per agent owner</small>
+</div>
+<div class="input-group">
+<label>Simple Q&A (monthly)</label>
+<input type="number" id="qa" value="100" min="0" oninput="calc()">
+<small>$0.011 per activity</small>
+</div>
+<div class="input-group">
+<label>Summarize Docs (monthly)</label>
+<input type="number" id="summarize" value="50" min="0" oninput="calc()">
+<small>$0.025 per activity</small>
+</div>
+<div class="input-group">
+<label>Draft Email (monthly)</label>
+<input type="number" id="draft" value="30" min="0" oninput="calc()">
+<small>$0.021 per activity</small>
+</div>
+<div class="input-group">
+<label>Create Document (monthly)</label>
+<input type="number" id="document" value="10" min="0" oninput="calc()">
+<small>$0.055 per activity</small>
+</div>
+<div class="input-group">
+<label>Schedule Meeting (monthly)</label>
+<input type="number" id="meeting" value="20" min="0" oninput="calc()">
+<small>$0.012 per activity</small>
+</div>
+<div class="input-group">
+<label>Research (monthly)</label>
+<input type="number" id="research" value="10" min="0" oninput="calc()">
+<small>$0.055 per activity</small>
+</div>
+<div class="input-group">
+<label>Workflow (monthly)</label>
+<input type="number" id="workflow" value="5" min="0" oninput="calc()">
+<small>$0.130 per activity</small>
+</div>
+<div class="input-group">
+<label>Foundry vCPU-hours (monthly)</label>
+<input type="number" id="vcpu" value="0" min="0" step="0.1" oninput="calc()">
+<small>$0.15/hour (if custom agent)</small>
+</div>
+</div>
+
+<div class="cost-summary">
+<div class="cost-row">
+<strong>Agent 365 License</strong>
+<span class="val" id="ag365Cost">$15.00</span>
+</div>
+<div class="cost-row">
+<strong>AI Consumption</strong>
+<span class="val" id="varCost">$6.40</span>
+</div>
+<div class="cost-row">
+<strong>Foundry Compute</strong>
+<span class="val" id="foundCost">$0.00</span>
+</div>
+<div class="cost-row total">
+<strong>🎯 Total Monthly</strong>
+<span class="val" id="totalMonth">$21.40</span>
+</div>
+<div style="margin-top:12px;font-size:0.9em;color:#605e5c">
+Annual: <strong id="annualCost">$256.80</strong>
+</div>
+</div>
+
+<div class="btn-group">
+<button class="btn btn-primary" onclick="exportCSV()">📥 Export CSV</button>
+<button class="btn btn-secondary" onclick="reset()">🔄 Reset</button>
+</div>
+</div>
+</div>
+
+<!-- HOW IT WORKS -->
+<div id="learn" class="tab-content">
+<div class="card">
+<h2>Understanding Agent 365 Costs</h2>
+<p style="margin:16px 0;font-size:0.95em;color:#605e5c">Your agent has two cost components: a fixed governance license + variable costs per activity.</p>
+
+<div class="highlight">
+<strong>💡 Key Principle:</strong> Whether 1 or 10,000 people use your agent, you pay per activity. User count doesn't matter—activity volume does.
+</div>
+
+<h3 style="margin-top:32px">Cost Breakdown</h3>
+<ul style="margin:16px 0 0 20px;color:#605e5c">
+<li><strong>Agent 365 License ($15/mo):</strong> Governance rights for your agent owner. Fixed cost, never changes.</li>
+<li><strong>Work IQ API:</strong> Charges per call to access M365 data (~0.1 credits = $0.001)</li>
+<li><strong>Copilot Studio:</strong> Charges per response (1–5 credits = $0.01–$0.05 depending on complexity)</li>
+<li><strong>Foundry Compute:</strong> Optional—only if using custom hosted agents ($0.15/vCPU-hour avg)</li>
+</ul>
+
+<h3 style="margin-top:32px">Scenario Examples (Total Monthly)</h3>
+<div class="scenario">
+<h4>Low Activity (200 activities/month)</h4>
+<p>Internal team of 20 people, light usage</p>
+<div class="scenario-cost">$17.20/month</div>
+</div>
+<div class="scenario">
+<h4>Medium Activity (500 activities/month)</h4>
+<p>Department-wide deployment</p>
+<div class="scenario-cost">$22–28/month</div>
+</div>
+<div class="scenario">
+<h4>High Activity (5,000 activities/month)</h4>
+<p>Org-wide or customer-facing agent</p>
+<div class="scenario-cost">$65–80/month</div>
+</div>
+<div class="scenario">
+<h4>Very High (50,000 activities/month)</h4>
+<p>Enterprise-scale, high-frequency usage</p>
+<div class="scenario-cost">$515–530/month</div>
+</div>
+</div>
+</div>
+
+<!-- PRICING -->
+<div id="pricing" class="tab-content">
+<div class="card">
+<h2>Activity Pricing Reference</h2>
+<table class="pricing-table">
+<tr>
+<th>Activity</th>
+<th>Service Path</th>
+<th>Credits</th>
+<th>Cost</th>
+</tr>
+<tr>
+<td><strong>Simple Q&A</strong></td>
+<td>Work IQ + Studio</td>
+<td>1 avg</td>
+<td>$0.011</td>
+</tr>
+<tr>
+<td><strong>Summarize</strong></td>
+<td>Work IQ + Studio</td>
+<td>2.5 avg</td>
+<td>$0.025</td>
+</tr>
+<tr>
+<td><strong>Draft Email</strong></td>
+<td>Studio</td>
+<td>2.1 avg</td>
+<td>$0.021</td>
+</tr>
+<tr>
+<td><strong>Create Document</strong></td>
+<td>Work IQ + Studio</td>
+<td>5.5 avg</td>
+<td>$0.055</td>
+</tr>
+<tr>
+<td><strong>Schedule Meeting</strong></td>
+<td>Work IQ + Studio</td>
+<td>1.2 avg</td>
+<td>$0.012</td>
+</tr>
+<tr>
+<td><strong>Research</strong></td>
+<td>Work IQ + Studio</td>
+<td>5.5 avg</td>
+<td>$0.055</td>
+</tr>
+<tr>
+<td><strong>Workflow</strong></td>
+<td>Work IQ + Studio</td>
+<td>13 avg</td>
+<td>$0.130</td>
+</tr>
+</table>
+</div>
+
+<div class="card">
+<h2>Fixed Costs</h2>
+<table class="pricing-table">
+<tr>
+<th>Item</th>
+<th>Required</th>
+<th>Cost</th>
+<th>Notes</th>
+</tr>
+<tr>
+<td><strong>Agent 365</strong></td>
+<td>✅ Yes</td>
+<td>$15/month</td>
+<td>Per agent owner</td>
+</tr>
+<tr>
+<td><strong>Foundry Compute</strong></td>
+<td>❓ Optional</td>
+<td>$0.15/vCPU-hr</td>
+<td>Custom agents only</td>
+</tr>
+<tr>
+<td><strong>Copilot Credits</strong></td>
+<td>⭐ Recommended</td>
+<td>$0.01/credit</td>
+<td>Prepay $200–500</td>
+</tr>
+</table>
+</div>
+
+<div class="card">
+<p style="font-size:0.9em;color:#605e5c"><strong>📜 Sources:</strong> Agent 365 ($15, July 2026) | Copilot Credit ($0.01, Oct 2026) | Work IQ (0.1 cr/call, June 2026) | Foundry ($0.15/hr avg, Oct 2026)</p>
+</div>
+</div>
+
+<!-- FAQ -->
+<div id="faq" class="tab-content">
+<div class="card">
+<h2>Frequently Asked Questions</h2>
+
+<div class="faq-item">
+<h3>Do I pay for Agent 365 even with zero activity?</h3>
+<p>Yes. The $15/month is your governance license—the right to build and own agents. It's independent of usage, like a subscription.</p>
+</div>
+
+<div class="faq-item">
+<h3>Can multiple agents share one Agent 365 license?</h3>
+<p>Yes. One Agent 365 owner ($15/month) can govern many agents. The cost is per-governor, not per-agent.</p>
+</div>
+
+<div class="faq-item">
+<h3>Why scale by activity, not users?</h3>
+<p>Each response calls Work IQ and Studio (metered per call). 1 user × 100 calls = 100 users × 1 call. Same cost either way.</p>
+</div>
+
+<div class="faq-item">
+<h3>What's the minimum monthly cost?</h3>
+<p>$15/month (Agent 365 alone). Zero activity = zero variable costs, but you always pay the governance license.</p>
+</div>
+
+<div class="faq-item">
+<h3>How cheap are activities?</h3>
+<p>Very. Simple Q&A = $0.011. Run 1,000 Q&As for $11. Even 50,000 activities/month = $500–800 variable + $15 fixed.</p>
+</div>
+
+<div class="faq-item">
+<h3>What about Foundry Hosted Agents?</h3>
+<p>Scale-to-zero: pay only when active. Idle time = $0. Budget 0.5–2 vCPU-hours per 1,000 activities.</p>
+</div>
+
+<div class="faq-item">
+<h3>Can I negotiate pricing?</h3>
+<p>These are public list prices. Enterprise agreements handled by your Microsoft CSP. Contact them for custom quotes.</p>
+</div>
+
+<div class="faq-item">
+<h3>How to measure actual costs?</h3>
+<p>Monitor M365 Admin Center > Copilot Credits dashboard daily. Track API calls and Studio responses. Compare pilot vs. estimate.</p>
+</div>
+</div>
+</div>
+
+</div>
+
+<div class="footer">
+<p>Agent 365 Standalone Cost Estimator v1.0 | Pricing verified Oct 25, 2026 | microsoft.ai design language</p>
+</div>
+
+<script>
+function showTab(t){document.querySelectorAll('.tab-content').forEach(e=>e.classList.remove('active'));document.querySelectorAll('.tab').forEach(e=>e.classList.remove('active'));document.getElementById(t).classList.add('active');event.target.classList.add('active')}
+function calc(){const a=parseFloat(document.getElementById('ag365').value)||15;const b=(parseFloat(document.getElementById('qa').value)||0)*0.011+(parseFloat(document.getElementById('summarize').value)||0)*0.025+(parseFloat(document.getElementById('draft').value)||0)*0.021+(parseFloat(document.getElementById('document').value)||0)*0.055+(parseFloat(document.getElementById('meeting').value)||0)*0.012+(parseFloat(document.getElementById('research').value)||0)*0.055+(parseFloat(document.getElementById('workflow').value)||0)*0.130;const c=(parseFloat(document.getElementById('vcpu').value)||0)*0.15;const d=a+b+c;document.getElementById('ag365Cost').textContent='$'+a.toFixed(2);document.getElementById('varCost').textContent='$'+b.toFixed(2);document.getElementById('foundCost').textContent='$'+c.toFixed(2);document.getElementById('totalMonth').textContent='$'+d.toFixed(2);document.getElementById('annualCost').textContent='$'+(d*12).toFixed(2)}
+function reset(){document.getElementById('ag365').value=15;document.getElementById('qa').value=100;document.getElementById('summarize').value=50;document.getElementById('draft').value=30;document.getElementById('document').value=10;document.getElementById('meeting').value=20;document.getElementById('research').value=10;document.getElementById('workflow').value=5;document.getElementById('vcpu').value=0;calc()}
+function exportCSV(){const a=document.getElementById('ag365Cost').textContent.replace('$','');const b=document.getElementById('varCost').textContent.replace('$','');const c=document.getElementById('foundCost').textContent.replace('$','');const d=document.getElementById('totalMonth').textContent.replace('$','');const e=document.getElementById('annualCost').textContent.replace('$','');const f='Cost Component,Monthly\nAgent 365 License,'+a+'\nAI Consumption,'+b+'\nFoundry Compute,'+c+'\nTOTAL,'+d+'\n\nAnnual,'+e;const g=new Blob([f],{type:'text/csv'});const h=URL.createObjectURL(g);const i=document.createElement('a');i.href=h;i.download='agent365_estimate.csv';i.click()}
+calc();
+</script>
+</body>
+</html>
